@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Ollama settings
 OLLAMA_API = "http://localhost:11434/api/generate"
-MODEL_NAME = "mistral:7b-instruct"  # Adjust to your model
+MODEL_NAME = "llama2"
 USE_FLASH_ATTENTION = True          # Enable or disable Flash Attention
 
 def start_ollama():
