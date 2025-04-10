@@ -1,9 +1,9 @@
 from flask import Flask, request, Response, send_from_directory
 import os
+import sys
 import requests
 import subprocess
 import time
-import sys
 import json
 
 app = Flask(__name__)
@@ -11,10 +11,24 @@ app = Flask(__name__)
 # Ollama settings
 OLLAMA_API = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama2"
-USE_FLASH_ATTENTION = True          # Enable or disable Flash Attention
+USE_FLASH_ATTENTION = True  # Enable or disable Flash Attention
+
+
+def get_base_dir():
+    """
+    When running as a onefile bundle, PyInstaller extracts all files into a temporary
+    folder referenced by sys._MEIPASS. Otherwise, return the directory containing this file.
+    """
+    if hasattr(sys, '_MEIPASS'):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
 
 def start_ollama():
-    """Start Ollama in the background if it's not already running"""
+    """Start Ollama in the background if it's not already running."""
+    # Build a path to the local ollama.exe (bundled in the same folder as our EXE)
+    local_ollama_path = os.path.join(get_base_dir(), "ollama.exe")
+
     try:
         # Check if Ollama is running by making a test request
         requests.get("http://localhost:11434/api/health", timeout=1)
@@ -22,15 +36,12 @@ def start_ollama():
         return True
     except requests.exceptions.RequestException:
         print("Starting Ollama...")
-
-        # Command to start Ollama
         if sys.platform == "win32":
-            # Windows - start Ollama using subprocess
             try:
                 startupinfo = subprocess.STARTUPINFO()
                 startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                 process = subprocess.Popen(
-                    ["ollama", "serve"],
+                    [local_ollama_path, "serve"],
                     startupinfo=startupinfo,
                     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
                 )
@@ -51,16 +62,23 @@ def start_ollama():
                 print(f"Error starting Ollama: {e}")
                 return False
         else:
-            # Linux/Mac
-            subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            # For Linux/Mac (if needed)
+            subprocess.Popen(
+                [local_ollama_path, "serve"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
             time.sleep(5)
             return True
 
+
 @app.route("/")
 def serve_index():
-    # Serve the single index.html file
-    root_dir = os.path.dirname(os.path.abspath(__file__))
+    # Serve the single index.html file from our base directory.
+    root_dir = get_base_dir()
+    print("DEBUG: Serving index from", root_dir, flush=True)
     return send_from_directory(root_dir, "index.html")
+
 
 @app.route("/chat", methods=["GET"])
 def chat_sse():
@@ -90,7 +108,7 @@ def chat_sse():
                 json={
                     "model": MODEL_NAME,
                     "prompt": prompt,
-                    "stream": True,   # streaming
+                    "stream": True,  # Enable streaming
                     "options": options
                 },
                 stream=True,
@@ -100,35 +118,32 @@ def chat_sse():
 
             for line in resp.iter_lines():
                 if line:
-                    # Each line should be valid JSON with {"response": "..."}
-                    # or it might be special tokens like "[DONE]"
                     try:
                         chunk = json.loads(line)
                         text_piece = chunk.get("response", "")
                         if text_piece:
-                            # SSE format: "data: your_text\n\n"
                             yield f"data: {text_piece}\n\n"
                     except json.JSONDecodeError:
                         pass
 
         except requests.exceptions.RequestException as e:
             print(f"Error calling Ollama API: {e}")
-            # Stream back an error message
             yield "data: Sorry, I'm having trouble connecting to my brain.\n\n"
 
     return Response(sse_generate(), mimetype='text/event-stream')
 
+
 if __name__ == "__main__":
     # Start Ollama before starting Flask
     if start_ollama():
-        # Ensure the model is pulled
         try:
             print(f"Checking if {MODEL_NAME} is available...")
             model_list = requests.get("http://localhost:11434/api/tags").json()
             available = [m["name"] for m in model_list.get("models", [])]
             if MODEL_NAME not in available:
                 print(f"Pulling {MODEL_NAME}... (first time may be slow)")
-                subprocess.run(["ollama", "pull", MODEL_NAME])
+                local_ollama_path = os.path.join(get_base_dir(), "ollama.exe")
+                subprocess.run([local_ollama_path, "pull", MODEL_NAME])
                 print(f"Model {MODEL_NAME} pulled successfully.")
         except Exception as e:
             print(f"Error checking/pulling model: {e}")
