@@ -4,3 +4,6 @@ node_modules
 
 package-lock.json
 ./electron-app/package-lock.json
+
+electron-app/flask_backend/search_cache
+electron-app/flask_backend/.env
