@@ -1,3 +1,6 @@
 # created by virtualenv automatically
 
 node_modules
+
+package-lock.json
+./electron-app/package-lock.json
