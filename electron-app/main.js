@@ -5,28 +5,28 @@ const path = require('path');
 let mainWindow;
 let flaskProcess;
 
-function startFlask() {
-  // Path to your compiled EXE (PyInstaller output)
-  const exePath = path.join(__dirname, 'flask_backend', 'dist', 'app.exe');
+const os = require('os');
 
-  // IMPORTANT: Set cwd to the same dist folder containing app.exe, index.html, ollama.exe
-  flaskProcess = spawn(exePath, [], {
-    cwd: path.join(__dirname, 'flask_backend', 'dist'),
+function startFlask() {
+  // Use Python in virtual environment to run the Flask app
+  const pythonPath = path.join(__dirname, 'venv', 'bin', 'python');
+  const scriptPath = path.join(__dirname, 'flask_backend', 'app.py');
+  
+  flaskProcess = spawn(pythonPath, [scriptPath], {
+    cwd: path.join(__dirname, 'flask_backend'),
     windowsHide: true
   });
 
-  // Optional logs for debugging
-  flaskProcess.stdout.on('data', (data) => {
+  flaskProcess.stdout.on('data', data => {
     console.log(`[Flask] ${data}`);
   });
-  flaskProcess.stderr.on('data', (data) => {
+  flaskProcess.stderr.on('data', data => {
     console.error(`[Flask Error] ${data}`);
   });
-  flaskProcess.on('close', (code) => {
+  flaskProcess.on('close', code => {
     console.log(`Flask process exited with code ${code}`);
   });
 }
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
