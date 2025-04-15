@@ -165,6 +165,10 @@
   ('bz2',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\bz2.py',
    'PYMODULE'),
+  ('cache_module',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\electron-app\\flask_backend\\cache_module.py',
+   'PYMODULE'),
   ('calendar',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\calendar.py',
    'PYMODULE'),
@@ -355,6 +359,26 @@
    'PYMODULE'),
   ('dis',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\dis.py',
+   'PYMODULE'),
+  ('dotenv',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\Lib\\site-packages\\dotenv\\__init__.py',
+   'PYMODULE'),
+  ('dotenv.ipython',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\Lib\\site-packages\\dotenv\\ipython.py',
+   'PYMODULE'),
+  ('dotenv.main',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\Lib\\site-packages\\dotenv\\main.py',
+   'PYMODULE'),
+  ('dotenv.parser',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\Lib\\site-packages\\dotenv\\parser.py',
+   'PYMODULE'),
+  ('dotenv.variables',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\Lib\\site-packages\\dotenv\\variables.py',
    'PYMODULE'),
   ('email',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\email\\__init__.py',
@@ -985,6 +1009,10 @@
   ('pydoc_data.topics',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\pydoc_data\\topics.py',
    'PYMODULE'),
+  ('query_analyzer',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\electron-app\\flask_backend\\query_analyzer.py',
+   'PYMODULE'),
   ('queue',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\queue.py',
    'PYMODULE'),
@@ -1067,6 +1095,10 @@
    'PYMODULE'),
   ('runpy',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\runpy.py',
+   'PYMODULE'),
+  ('search_module',
+   'C:\\Users\\hiche\\Desktop\\Solisco '
+   'Chatbot\\electron-app\\flask_backend\\search_module.py',
    'PYMODULE'),
   ('secrets',
    'C:\\Users\\hiche\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\secrets.py',
