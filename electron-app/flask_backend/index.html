@@ -131,6 +131,113 @@
       word-wrap: break-word;
       line-height: 1.4;
     }
+    
+    /* Formatted message content styling */
+    .message p {
+      margin: 0 0 10px 0;
+    }
+    
+    .message p:last-child {
+      margin-bottom: 0;
+    }
+    
+    /* Single paragraph gets extra padding */
+    .single-paragraph {
+      padding: 5px 0;
+    }
+    
+    /* Content blocks layout */
+    .formatted-list, .paragraph-group {
+      margin-bottom: 15px;
+      padding: 5px;
+      border-radius: 4px;
+    }
+    
+    /* Lists styling */
+    .formatted-list {
+      background-color: rgba(0, 0, 0, 0.1);
+      padding: 8px 5px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .formatted-list.numbered-list {
+      border-left: 3px solid var(--accent-color);
+    }
+    
+    .formatted-list.bullet-list {
+      border-left: 3px solid #7289da;
+    }
+    
+    .list-item {
+      display: flex;
+      margin-bottom: 8px;
+      align-items: flex-start;
+    }
+    
+    .list-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .list-number, .list-bullet {
+      min-width: 30px;
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-right: 10px;
+      display: inline-block;
+      text-align: right;
+    }
+    
+    .list-bullet {
+      color: #7289da;
+    }
+    
+    .list-content {
+      flex: 1;
+    }
+    
+    .list-continuation {
+      padding-left: 33px;
+      margin-bottom: 5px;
+    }
+    
+    /* Paragraph group styling */
+    .paragraph-group {
+      background-color: rgba(0, 0, 0, 0.05);
+      padding: 8px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+      border-left: 3px solid #4a4a4a;
+    }
+    
+    .paragraph-group p {
+      margin-bottom: 8px;
+    }
+    
+    /* Code and emphasis styling */
+    .message code {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    
+    .message strong {
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+    
+    .message strong.bold-header {
+      font-weight: bold;
+      color: #f0a030;
+      font-size: 1.05em;
+    }
+    
+    .message em {
+      font-style: italic;
+      color: #a9a9a9;
+    }
 
     .user {
       background-color: var(--user-bubble);
@@ -352,11 +459,235 @@
       conv.messages.forEach(msg => {
         const msgDiv = document.createElement("div");
         msgDiv.classList.add("message", msg.role);
-        msgDiv.textContent = msg.text;
+        
+        // For assistant messages, format the text properly
+        if (msg.role === "assistant") {
+          // Format the text to properly display lists, paragraphs, etc.
+          const formattedText = formatMessageText(msg.text);
+          msgDiv.innerHTML = formattedText;
+        } else {
+          // For user messages, just use text content
+          msgDiv.textContent = msg.text;
+        }
+        
         messagesDiv.appendChild(msgDiv);
       });
 
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    // Function to format message text with proper HTML
+    function formatMessageText(text) {
+      if (!text) return "";
+      
+      // First, let's normalize line endings
+      text = text.replace(/\r\n/g, '\n');
+      
+      // Handle the specific pattern from your new example:
+      // "Here are my top 5 sales tips:1. Build relationships"
+      text = text.replace(/([^0-9]):(\d+\.)/g, "$1:\n\n$2");
+      
+      // Special case: Handle the pattern from the example
+      // Format: "**Bold title**: Text content2. **Bold title**: Text"
+      text = text.replace(/(\*\*[^*:]+\*\*\s*:[^.]*\.)(\d+\.\s+\*\*)/g, "$1\n\n$2");
+      
+      // Handle the case with Markdown-style headers that might be adjacent to list items
+      text = text.replace(/(##+\s+[^\n]+)(\d+\.)/g, "$1\n\n$2");
+      
+      // Handle the common pattern where numbered list items are directly adjacent without space
+      // This is critical for patterns like "1. Item text2. Another item"
+      text = text.replace(/(\d+\.\s+[^\n]+)(\d+\.)/g, "$1\n\n$2");
+      
+      // Another pattern seen in the wild: sentences ending with period followed by numbered list
+      text = text.replace(/([^.\n]\.)(\d+\.)/g, "$1\n\n$2");
+      
+      // Pre-process the text to ensure proper spacing between sections
+      text = text.replace(/\n{3,}/g, '\n\n'); // Normalize multiple newlines
+      
+      // Add spacing between list items if there isn't already a newline
+      text = text.replace(/(\d+\..*?)(?=\n\d+\.)/g, '$1\n'); 
+      text = text.replace(/([\*\-].*?)(?=\n[\*\-])/g, '$1\n');
+      
+      // Process numbered lists that don't have proper spacing
+      // Find patterns like "1. Something2. Something else" or "10. Something11. Something else"
+      text = text.replace(/(\d+\.\s+[^.\n]+)(?=\d+\.)/g, '$1\n\n');
+      
+      // Ensure proper separation between numbers with multiple digits
+      text = text.replace(/(\d{2,}\.\s+[^.\n]+)(?=\d{1,}\.)/g, '$1\n\n');
+      
+      // Special case: Fix double-digit numbers without proper spacing
+      // This handles cases like "9. Item10. Next item" by adding a newline
+      text = text.replace(/(\d+\.\s+[^\n]+)(\d{2,}\.)/g, '$1\n\n$2');
+      
+      // Look for potential numbered lists with inline formatting and fix them
+      // Support any number of digits (1, 10, 100, etc.)
+      let numberedListPattern = /(\*\*|\*)?(\d+)\.(\*\*|\*)?\s+(.*?)(?=(\*\*|\*)?\d+\.(\*\*|\*)?|\n|$)/g;
+      text = text.replace(numberedListPattern, function(match, p1, num, p3, content) {
+        return `${num}. ${content}\n\n`;
+      });
+      
+      // Process multi-digit numbered list items (10, 11, 12...) that may be formatting incorrectly
+      let multiDigitListPattern = /(\d{2,})\.(\s+.*?)(?=\d+\.|\n|$)/g;
+      text = text.replace(multiDigitListPattern, function(match, num, content) {
+        return `${num}.${content}\n\n`;
+      });
+      
+      // Process the pattern that appears in the example with bold headers
+      // Format: "**Bold Title**: Content2. **Bold Title**: Content"
+      let boldHeaderListPattern = /\*\*([^*:]+)\*\*:\s+(.*?)(?=\d+\.\s+\*\*|$)/gs;
+      text = text.replace(boldHeaderListPattern, function(match, boldTitle, content) {
+        return `**${boldTitle}**: ${content}\n\n`;
+      });
+      
+      // Split the text into distinct content blocks
+      const contentBlocks = [];
+      
+      // First split by actual double newlines
+      const initialBlocks = text.split(/\n\n+/);
+      
+      // Then process each block to see if it contains an unmarked list
+      initialBlocks.forEach(block => {
+        // Check if this block might contain multiple numbered items without proper separation
+        if (block.match(/\d+\.\s+.*\d+\.\s+/)) {
+          // Try to split this into separate list items
+          // Pattern that handles numbers of any length (1, 10, 100, etc.)
+          // This improved pattern detects boundaries between list items more reliably
+          const items = block.split(/(?<=\.\s+[^\n.]{2,50})(?=\d{1,}\.)/g);
+          contentBlocks.push(...items);
+        } else {
+          contentBlocks.push(block);
+        }
+      });
+      
+      // Process each content block
+      let formattedHtml = '';
+      
+      // First, detect and collect list items into proper lists
+      let currentList = [];
+      let isNumberedList = false;
+      let processingList = false;
+      
+      // Add any accumulated list to the formatted HTML
+      function flushList() {
+        if (currentList.length > 0) {
+          let listHtml = `<div class="formatted-list ${isNumberedList ? 'numbered-list' : 'bullet-list'}">`;
+          
+          currentList.forEach(item => {
+            if (isNumberedList) {
+              // Match any number of digits for the list item number (1., 10., 100., etc.)
+              const match = item.match(/^(\d+)\.\s+(.*)/);
+              if (match) {
+                // Process the content for any inline formatting
+                const formattedContent = formatInlineElements(match[2]);
+                // Display the list number exactly as provided from the backend with proper spacing
+                listHtml += `<div class="list-item"><span class="list-number">${match[1]}.</span><span class="list-content">${formattedContent}</span></div>`;
+              } else {
+                listHtml += `<div class="list-continuation">${formatInlineElements(item)}</div>`;
+              }
+            } else {
+              const match = item.match(/^[\*\-]\s+(.*)/);
+              if (match) {
+                // Process the content for any inline formatting
+                const formattedContent = formatInlineElements(match[1]);
+                listHtml += `<div class="list-item"><span class="list-bullet">•</span> <span class="list-content">${formattedContent}</span></div>`;
+              } else {
+                listHtml += `<div class="list-continuation">${formatInlineElements(item)}</div>`;
+              }
+            }
+          });
+          
+          listHtml += '</div>';
+          formattedHtml += listHtml;
+          currentList = [];
+          processingList = false;
+        }
+      }
+      
+      contentBlocks.forEach(block => {
+        block = block.trim();
+        if (!block) return;
+        
+        // Check if this block starts a numbered list item
+        const isNumberedItem = /^\d+\.\s+/.test(block);
+        
+        // Check if this block starts a bullet list item
+        const isBulletItem = /^[\*\-]\s+/.test(block);
+        
+        if (isNumberedItem) {
+          // If we were processing a different type of list, flush it first
+          if (processingList && !isNumberedList) {
+            flushList();
+          }
+          
+          // Add this item to the current list
+          currentList.push(block);
+          processingList = true;
+          isNumberedList = true;
+        } 
+        else if (isBulletItem) {
+          // If we were processing a different type of list, flush it first
+          if (processingList && isNumberedList) {
+            flushList();
+          }
+          
+          // Add this item to the current list
+          currentList.push(block);
+          processingList = true;
+          isNumberedList = false;
+        }
+        else {
+          // This is not a list item, so flush any current list
+          flushList();
+          
+          // Process this block as a regular paragraph or paragraph group
+          if (block.includes('\n')) {
+            // Multi-line section - make each line a paragraph
+            const lines = block.split('\n').filter(line => line.trim());
+            let paragraphsHtml = '<div class="paragraph-group">';
+            
+            lines.forEach(line => {
+              paragraphsHtml += `<p>${formatInlineElements(line)}</p>`;
+            });
+            
+            paragraphsHtml += '</div>';
+            formattedHtml += paragraphsHtml;
+          }
+          else {
+            // Single paragraph
+            formattedHtml += `<p class="single-paragraph">${formatInlineElements(block)}</p>`;
+          }
+        }
+      });
+      
+      // Make sure to flush any remaining list items
+      flushList();
+      
+      return formattedHtml;
+    }
+    
+    // Helper function to format inline elements like code, bold, italic
+    function formatInlineElements(text) {
+      if (!text) return "";
+      
+      // Handle case where text starts with bold formatting
+      // This specifically handles the pattern in the example: "**Personalization**: Rest of text"
+      const boldHeaderMatch = text.match(/^\*\*([^*:]+)\*\*\s*:\s*(.*)$/);
+      if (boldHeaderMatch) {
+        const boldPart = boldHeaderMatch[1];
+        const restOfText = boldHeaderMatch[2];
+        return `<strong class="bold-header">${boldPart}:</strong> ${formatInlineElements(restOfText)}`;
+      }
+      
+      // Format code blocks
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // Format bold text (not at the beginning of text)
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      // Format italic text, being careful with patterns like *text* that might be bold markers
+      text = text.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+      
+      return text;
     }
 
     function selectConversation(id) {
@@ -461,6 +792,11 @@ function renameConversation(id) {
         }
         renderMessages();
       };
+      
+      source.addEventListener("done", () => {
+        // Once streaming is complete, close the connection
+        source.close();
+      });
 
       source.onerror = (err) => {
         console.error("SSE error:", err);
